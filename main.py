@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import lxml
-
+import smtplib
+from credentials import my_email, my_password
 
 # scrape the price off of Amazon webpage
 # header info that I got using http://myhttpheader.com
@@ -21,5 +22,20 @@ soup = BeautifulSoup(amazon_html, "lxml")
 pre_price = soup.select(selector="div.a-section span.priceToPay span.a-offscreen")
 
 # Get rid of the dollar sign and convert it to a float
-price = float(pre_price[0].getText().replace("$", ""))
+product_price = float(pre_price[0].getText().replace("$", ""))
 
+# Set up an email alert if the price gets lower than the target price
+target_price = 200
+
+# Get the product title
+product_title = soup.find(id="productTitle").get_text().split("–")[0].strip()
+
+# Send an email alert if the product price is lower than thhe target price
+if product_price <= target_price:
+
+    with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
+        connection.starttls()
+        connection.login(user=my_email, password=my_password)
+        connection.sendmail(from_addr=my_email,
+                            to_addrs=my_email,
+                            msg=f"Subject: Time to buy!\n\n{product_title} you wanted is now only ${product_price}")
